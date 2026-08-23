@@ -414,6 +414,8 @@ body {
     <div class="card-row">
       <span class="label">性别：</span>
       <span class="value" id="r_gender"></span>
+      <span class="label">年龄：</span>
+      <span class="value" id="r_age"></span>
     </div>
     <div class="card-row">
       <span class="label">身份证号：</span>
@@ -548,18 +550,20 @@ window.currentCert = null;
     const cert = {
       name: fields[0] || '',
       gender: fields[1] || '',
-      idcard: fields[2] || '',
-      category: fields[3] || '',
-      hospital: fields[4] || '',
-      examDate: fields[5] || '',
-      validDate: fields[6] || '',
-      photo: fields[7] || '',
-      phone: fields[8] || ''
+      age: fields[2] || '',
+      idcard: fields[3] || '',
+      category: fields[4] || '',
+      hospital: fields[5] || '',
+      examDate: fields[6] || '',
+      validDate: fields[7] || '',
+      photo: fields[8] || '',
+      phone: fields[9] || ''
     };
     window.currentCert = cert;
     document.getElementById('personName').textContent = cert.name || '';
     document.getElementById('r_name').textContent = cert.name || '';
     document.getElementById('r_gender').textContent = cert.gender || '';
+    document.getElementById('r_age').textContent = cert.age || '';
     document.getElementById('r_idcard').textContent = maskIdCard(cert.idcard);
     document.getElementById('r_category').textContent = cert.category || '';
     document.getElementById('r_hospital').textContent = cert.hospital || '';
