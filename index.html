@@ -203,50 +203,52 @@ body {
   top: 0; left: 0; right: 0; bottom: 0;
   z-index: 9999;
   display: none;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 30px 0;
 }
-.photo-viewer.active { display: flex; }
+.photo-viewer.active { display: block; }
 .photo-viewer-bg {
-  position: absolute;
+  position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: #000;
   opacity: 0;
-  transition: opacity 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: opacity 0.35s ease;
+  z-index: 0;
 }
-.photo-viewer.active .photo-viewer-bg { opacity: 0.92; }
+.photo-viewer.active .photo-viewer-bg { opacity: 0.95; }
 .photo-viewer-img {
+  display: block;
   position: relative;
   z-index: 1;
-  max-width: 92%;
-  max-height: 88%;
-  border-radius: 10px;
+  width: 92%;
+  max-width: 500px;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 8px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  transform: scale(0.6) translateY(20px);
   opacity: 0;
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
-  will-change: transform, opacity;
+  transform: translateY(20px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
   user-select: none;
   -webkit-user-drag: none;
-  pointer-events: auto;
 }
 .photo-viewer.active .photo-viewer-img {
-  transform: scale(1) translateY(0);
   opacity: 1;
-}
-.photo-viewer.dragging .photo-viewer-img,
-.photo-viewer.dragging .photo-viewer-bg {
-  transition: none;
+  transform: translateY(0);
 }
 .photo-viewer-close-hint {
-  position: absolute;
-  top: 20px;
+  position: fixed;
+  top: 15px;
   left: 50%;
   transform: translateX(-50%);
-  color: rgba(255,255,255,0.6);
-  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+  font-size: 13px;
   z-index: 2;
+  background: rgba(0,0,0,0.5);
+  padding: 6px 16px;
+  border-radius: 20px;
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -477,7 +479,7 @@ body {
 <!-- 照片查看器 -->
 <div class="photo-viewer" id="photoViewer">
   <div class="photo-viewer-bg" id="viewerBg"></div>
-  <div class="photo-viewer-close-hint">下滑关闭</div>
+  <div class="photo-viewer-close-hint">点击任意处关闭</div>
   <img class="photo-viewer-img" id="photoViewerImg" src="" alt="">
 </div>
 
@@ -500,24 +502,16 @@ function b64decode(str) {
   const viewerBg = document.getElementById('viewerBg');
   const personPhoto = document.getElementById('personPhoto');
 
-  let startY = 0;
-  let currentY = 0;
-  let isDragging = false;
-  let dragStartTime = 0;
-
   function openViewer(src) {
     viewerImg.src = src;
     viewer.classList.add('active');
     document.body.style.overflow = 'hidden';
+    viewer.scrollTop = 0;
   }
 
   function closeViewer() {
     viewer.classList.remove('active');
     document.body.style.overflow = '';
-    // 复位内联样式
-    viewerImg.style.transform = '';
-    viewerImg.style.opacity = '';
-    viewerBg.style.opacity = '';
   }
 
   // 点击照片打开
@@ -527,106 +521,12 @@ function b64decode(str) {
     openViewer(img.src);
   });
 
-  // 点击背景关闭
+  // 点击任意处关闭
   viewer.addEventListener('click', function(e) {
-    if (e.target === viewer || e.target === viewerBg) {
-      closeViewer();
-    }
+    closeViewer();
   });
 
-  // 触摸事件 - 上下滑动
-  viewerImg.addEventListener('touchstart', function(e) {
-    startY = e.touches[0].clientY;
-    currentY = 0;
-    isDragging = true;
-    dragStartTime = Date.now();
-    viewer.classList.add('dragging');
-  }, { passive: true });
-
-  viewerImg.addEventListener('touchmove', function(e) {
-    if (!isDragging) return;
-    currentY = e.touches[0].clientY - startY;
-    // 上滑有阻力，下滑跟手
-    let dy = currentY;
-    if (dy < 0) dy = dy * 0.35;
-    const distance = Math.abs(dy);
-    const scale = Math.max(0.55, 1 - distance / 800);
-    const opacity = Math.max(0, 0.92 - distance / 450);
-    viewerImg.style.transform = 'translateY(' + dy + 'px) scale(' + scale + ')';
-    viewerBg.style.opacity = opacity;
-  }, { passive: true });
-
-  viewerImg.addEventListener('touchend', function() {
-    if (!isDragging) return;
-    isDragging = false;
-    viewer.classList.remove('dragging');
-    const dragDuration = Date.now() - dragStartTime;
-    // 下滑超过120px，或快速下滑（小于300ms且位移>60px）则关闭
-    if (currentY > 120 || (dragDuration < 300 && currentY > 60)) {
-      // 关闭动画：继续下滑淡出
-      viewerImg.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-      viewerBg.style.transition = 'opacity 0.3s ease';
-      viewerImg.style.transform = 'translateY(' + (currentY + 200) + 'px) scale(0.7)';
-      viewerImg.style.opacity = '0';
-      viewerBg.style.opacity = '0';
-      setTimeout(function() {
-        closeViewer();
-        viewerImg.style.transition = '';
-        viewerBg.style.transition = '';
-      }, 300);
-    } else {
-      // 回弹
-      viewerImg.style.transform = '';
-      viewerBg.style.opacity = '';
-    }
-    currentY = 0;
-  });
-
-  // 鼠标支持（电脑端测试用）
-  let mouseDown = false;
-  viewerImg.addEventListener('mousedown', function(e) {
-    startY = e.clientY;
-    currentY = 0;
-    mouseDown = true;
-    isDragging = true;
-    dragStartTime = Date.now();
-    viewer.classList.add('dragging');
-    e.preventDefault();
-  });
-  document.addEventListener('mousemove', function(e) {
-    if (!mouseDown) return;
-    currentY = e.clientY - startY;
-    let dy = currentY;
-    if (dy < 0) dy = dy * 0.35;
-    const distance = Math.abs(dy);
-    const scale = Math.max(0.55, 1 - distance / 800);
-    const opacity = Math.max(0, 0.92 - distance / 450);
-    viewerImg.style.transform = 'translateY(' + dy + 'px) scale(' + scale + ')';
-    viewerBg.style.opacity = opacity;
-  });
-  document.addEventListener('mouseup', function() {
-    if (!mouseDown) return;
-    mouseDown = false;
-    isDragging = false;
-    viewer.classList.remove('dragging');
-    const dragDuration = Date.now() - dragStartTime;
-    if (currentY > 120 || (dragDuration < 300 && currentY > 60)) {
-      viewerImg.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-      viewerBg.style.transition = 'opacity 0.3s ease';
-      viewerImg.style.transform = 'translateY(' + (currentY + 200) + 'px) scale(0.7)';
-      viewerImg.style.opacity = '0';
-      viewerBg.style.opacity = '0';
-      setTimeout(function() {
-        closeViewer();
-        viewerImg.style.transition = '';
-        viewerBg.style.transition = '';
-      }, 300);
-    } else {
-      viewerImg.style.transform = '';
-      viewerBg.style.opacity = '';
-    }
-    currentY = 0;
-  });
+  // 阻止图片点击冒泡（但现在点击图片也关闭，所以不需要阻止）
 })();
 
 /* ===== 数据渲染 ===== */
