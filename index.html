@@ -240,7 +240,8 @@ body {
 }
 .photo-viewer-close-hint {
   position: fixed;
-  top: 15px;
+  bottom: 20px;
+  top: auto;
   left: 50%;
   transform: translateX(-50%);
   color: rgba(255,255,255,0.7);
@@ -507,11 +508,17 @@ function b64decode(str) {
     viewer.classList.add('active');
     document.body.style.overflow = 'hidden';
     viewer.scrollTop = 0;
+    // 隐藏官方导航栏，避免挡住照片
+    const nav = document.querySelector('.gov-nav');
+    if (nav) nav.style.display = 'none';
   }
 
   function closeViewer() {
     viewer.classList.remove('active');
     document.body.style.overflow = '';
+    // 恢复官方导航栏
+    const nav = document.querySelector('.gov-nav');
+    if (nav) nav.style.display = '';
   }
 
   // 点击照片打开
